@@ -31,9 +31,12 @@ export function fingersToPossibleWords(
 }
 
 // Get possible sentence from fingers
-export function predictSentence(fingers: Finger[], trie: Trie) {
+export function fingersToPossibleSentences(fingers: Finger[], trie: Trie) {
+  const startSentenceTime = performance.now();
+
   const spaceFinger = letterToFinger(" ");
 
+  // Split fingers into words by space
   const words = fingers.reduce(
     (acc, finger) => {
       if (finger === spaceFinger) {
@@ -53,6 +56,7 @@ export function predictSentence(fingers: Finger[], trie: Trie) {
     const fingersForWord = words[i];
     let possibleWords: Set<string> | undefined = undefined;
 
+    // Narrow down list of possible words as each finger is added
     for (let j = 0; j < fingersForWord.length; j++) {
       const finger = fingersForWord[j];
 
@@ -66,6 +70,10 @@ export function predictSentence(fingers: Finger[], trie: Trie) {
 
     sentenceWords.push([...(possibleWords ?? [])]);
   }
+
+  console.info(
+    `Finished sentence prediction (${performance.now() - startSentenceTime}ms)`
+  );
 
   return sentenceWords;
 }
