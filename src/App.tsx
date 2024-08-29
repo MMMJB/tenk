@@ -79,7 +79,7 @@ export default function App() {
           locked={i < words.length - 1}
           predictions={predictions[i] ?? []}
         >
-          {word.join("")}
+          {word.join(" ")}
         </Word>
       ))}
     </div>
