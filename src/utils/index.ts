@@ -12,7 +12,7 @@ export const groupedFingerMap = _.groupBy(
 );
 
 // Get finger for letter
-export function letterToFinger(letter: Letter): number {
+export function letterToFinger(letter: Letter): Finger {
   return fingermap[letter];
 }
 
