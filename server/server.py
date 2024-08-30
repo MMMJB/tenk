@@ -29,18 +29,17 @@ def get_next_token_probabilities(input_text):
 
     # Get probabilities for the next token
     next_token_logits = logits[0, -1, :]
-    next_token_probs = torch.softmax(next_token_logits, dim=-1)
+    
+    return torch.softmax(next_token_logits, dim=-1)
 
-    # Sort probabilities in descending order
-    sorted_probs, sorted_indices = torch.sort(next_token_probs, descending=True)
+def calculate_word_probability(word, token_probabilities):
+    word_tokens = tokenizer.encode(word, add_special_tokens=False)
+    prob = 1.0
 
-    # Create a list of (token, probability) tuples
-    token_prob_pairs = []
-    for prob, idx in zip(sorted_probs, sorted_indices):
-        token = tokenizer.decode([idx])
-        token_prob_pairs.append((token, prob.item()))
+    for token in word_tokens:
+        prob *= token_probabilities[token].item()
 
-    return token_prob_pairs
+    return prob
 
 @app.route("/predict", methods=["POST"])
 def api_get_next_token_probabilities():
@@ -49,14 +48,31 @@ def api_get_next_token_probabilities():
     
     data = request.get_json()
     input_text = data.get("text", "")
+    options = data.get("options", "")
 
     if not input_text:
         return jsonify({"error": "No input text provided"}), 400
+    elif not options:
+        return jsonify({"error": "No options provided"}), 400
     
-    results = get_next_token_probabilities(input_text)
-    # Convert results to a list of dictionaries for JSON serialization
-    response_data = [{"token": token, "probability": prob} for token, prob in results]
-    return jsonify({"input_text": input_text, "next_tokens": response_data})
+    token_probabilities = get_next_token_probabilities(input_text)
+
+    word_probabilities = {}
+    for word in options:
+        word_prob = calculate_word_probability(word, token_probabilities)
+        word_probabilities[word] = word_prob
+
+    # Normalize probabilities
+    total_prob = sum(word_probabilities.values())
+    normalized_probs = {word: prob/total_prob for word, prob in word_probabilities.items()}
+
+    # Sort by probability in descending order
+    sorted_words = sorted(normalized_probs.items(), key=lambda x: x[1], reverse=True)
+
+    return jsonify({
+        "input_text": input_text,
+        "word_probabilities": sorted_words
+    })
 
 @app.route("/ping", methods=["GET"])
 def api_ping():
