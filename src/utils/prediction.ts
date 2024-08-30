@@ -98,13 +98,16 @@ export async function rankNextWords(
   const startPredictionTime = performance.now();
 
   // Returns a promise that resolves to the next word probabilities
-  const response = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/predict`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ text: context, options }),
-  });
+  const response = await fetch(
+    `${import.meta.env.VITE_API_ENDPOINT}/predict/word`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text: context, options }),
+    }
+  );
   const data = (await response.json()) as APIResponse;
 
   const wordProbabilities = Object.fromEntries(data.word_probabilities);
@@ -116,37 +119,65 @@ export async function rankNextWords(
   return wordProbabilities;
 }
 
-type SentencePrediction = {
+export type SentencePrediction = {
   sentence: string;
   probabilities: Record<string, number>[];
 };
 
+export type APISentencePrediction = {
+  prefix: string;
+  predicted_sentence: string;
+};
+
 export async function predictSentence(
   anchor: string,
-  words: string[][]
-): Promise<SentencePrediction> {
+  words: string[][],
+  method: "internal" | "external"
+): Promise<SentencePrediction | APISentencePrediction> {
   const startPredictionTime = performance.now();
 
-  let context = anchor;
-  const predictions: Record<string, number>[] = [];
+  if (method === "external") {
+    let context = anchor;
+    const predictions: Record<string, number>[] = [];
 
-  for (const wordList of words) {
-    const sortedWordProbabilities = await rankNextWords(context, wordList);
+    for (const wordList of words) {
+      const sortedWordProbabilities = await rankNextWords(context, wordList);
 
-    predictions.push(sortedWordProbabilities);
+      predictions.push(sortedWordProbabilities);
 
-    const nextWord = Object.entries(sortedWordProbabilities)[0][0];
-    context += ` ${nextWord}`;
+      const nextWord = Object.entries(sortedWordProbabilities)[0][0];
+      context += ` ${nextWord}`;
+    }
+
+    console.info(
+      `Finished sentence prediction (${
+        performance.now() - startPredictionTime
+      }ms)`
+    );
+
+    return {
+      sentence: context,
+      probabilities: predictions,
+    };
+  } else {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_ENDPOINT}/predict/sentence`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prefix: anchor, word_options: words }),
+      }
+    );
+    const data = (await response.json()) as SentencePrediction;
+
+    console.info(
+      `Finished sentence prediction (${
+        performance.now() - startPredictionTime
+      }ms)`
+    );
+
+    return data;
   }
-
-  console.info(
-    `Finished sentence prediction (${
-      performance.now() - startPredictionTime
-    }ms)`
-  );
-
-  return {
-    sentence: context,
-    probabilities: predictions,
-  };
 }

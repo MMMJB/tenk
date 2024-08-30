@@ -1,13 +1,13 @@
 import { useRef, useState, useEffect } from "react";
 
-import Word from "./components/Word";
+import Word from "../components/Word";
 
-import type { Finger, Letter } from "./utils";
-import type { SentencePrediction } from "./utils/prediction";
+import type { Finger, Letter } from "../utils";
+import type { SentencePrediction } from "../utils/prediction";
 
-import { letterToFinger } from "./utils";
-import { fingersToPossibleWords, predictSentence } from "./utils/prediction";
-import { trie } from "./main";
+import { letterToFinger } from "../utils";
+import { fingersToPossibleWords, predictSentence } from "../utils/prediction";
+import { trie } from "../main";
 
 const space = letterToFinger(" ") as Finger;
 

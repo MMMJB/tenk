@@ -69,6 +69,13 @@ body,
         left: 0;
         translate: 0 100%;
       }
+
+      .prediction {
+        position: absolute;
+        top: 0;
+        left: 0;
+        translate: 0 -100%;
+      }
     }
   }
 
