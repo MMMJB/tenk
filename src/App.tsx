@@ -5,10 +5,12 @@ import Word from "./components/Word";
 import type { Finger, Letter } from "./utils";
 
 import { letterToFinger } from "./utils";
-import { fingersToPossibleWords } from "./utils/prediction";
+import { fingersToPossibleWords, predictSentence } from "./utils/prediction";
 import { trie } from "./main";
 
 const space = letterToFinger(" ") as Finger;
+
+const ANCHOR = "how";
 
 export default function App() {
   const [words, setWords] = useState<number[][]>([[]]);
@@ -71,17 +73,33 @@ export default function App() {
     setPredictions((p) => [...p, [...(possibleWords ?? [])]]);
   }, [words]);
 
+  async function predict() {
+    const { sentence, probabilities } = await predictSentence(
+      ANCHOR,
+      predictions
+    );
+
+    console.log(sentence);
+    console.log(probabilities);
+  }
+
   return (
     <div className="sentence">
-      {words.map((word, i) => (
-        <Word
-          key={i}
-          locked={i < words.length - 1}
-          predictions={predictions[i] ?? []}
-        >
-          {word.join(" ")}
-        </Word>
-      ))}
+      <div className="word static">{ANCHOR}</div>
+      {words
+        .filter((word) => word.length)
+        .map((word, i) => (
+          <Word
+            key={i}
+            locked={i < words.length - 1}
+            predictions={predictions[i] ?? []}
+          >
+            {word.join(" ")}
+          </Word>
+        ))}
+      <div className="word static">
+        <button onClick={predict}>Predict</button>
+      </div>
     </div>
   );
 }
