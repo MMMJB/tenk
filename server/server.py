@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import torch
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 app = Flask(__name__)
+CORS(app)
 
 # # Check if AMD GPU is available
 # if torch.backends.rocm.is_available():
@@ -33,15 +35,33 @@ def get_next_token_probabilities(input_text):
     return torch.softmax(next_token_logits, dim=-1)
 
 def calculate_word_probability(word, token_probabilities):
-    word_tokens = tokenizer.encode(word, add_special_tokens=False)
+    # Add spaces before and after the word to treat it as a complete word
+    word_with_spaces = f" {word} "
+    word_tokens = tokenizer.encode(word_with_spaces, add_special_tokens=False)
+    
     prob = 1.0
-
     for token in word_tokens:
         prob *= token_probabilities[token].item()
 
     return prob
 
-@app.route("/predict", methods=["POST"])
+def predict_next_word(current_text, options):
+    token_probabilities = get_next_token_probabilities(current_text)
+    word_probabilities = {word: calculate_word_probability(word, token_probabilities) for word in options}
+    return max(word_probabilities, key=word_probabilities.get)
+
+def predict_sentence(prefix, word_options):
+    current_text = prefix
+    predicted_sentence = [prefix]
+
+    for options in word_options:
+        next_word = predict_next_word(current_text, options)
+        predicted_sentence.append(next_word)
+        current_text += " " + next_word
+
+    return " ".join(predicted_sentence)
+
+@app.route("/predict/word", methods=["POST"])
 def api_get_next_token_probabilities():
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
@@ -73,6 +93,28 @@ def api_get_next_token_probabilities():
         "input_text": input_text,
         "word_probabilities": sorted_words
     })
+
+@app.route("/predict/sentence", methods=["POST"])
+def api_get_sentence_probabilities():
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+    
+    data = request.get_json()
+    prefix = data.get("prefix", "")
+    word_options = data.get("word_options", "")
+
+    if not prefix:
+        return jsonify({"error": "No anchor text provided"}), 400
+    elif not word_options:
+        return jsonify({"error": "No word lists provided"}), 400
+    
+    predicted_sentence = predict_sentence(prefix, word_options)
+
+    return jsonify({
+        "prefix": prefix,
+        "predicted_sentence": predicted_sentence
+    })
+
 
 @app.route("/ping", methods=["GET"])
 def api_ping():
