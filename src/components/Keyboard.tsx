@@ -28,7 +28,7 @@ function Key({ n }: { n: number }) {
       document.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("keyup", onKeyUp);
     };
-  }, [onKeyDown, onKeyUp]);
+  }, []);
 
   return <div className={`key ${pressed && "pressed"}`} />;
 }
