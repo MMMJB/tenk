@@ -45,7 +45,23 @@ def calculate_word_probability(word, token_probabilities):
 
     return prob
 
-@app.route("/predict", methods=["POST"])
+def predict_next_word(current_text, options):
+    token_probabilities = get_next_token_probabilities(current_text)
+    word_probabilities = {word: calculate_word_probability(word, token_probabilities) for word in options}
+    return max(word_probabilities, key=word_probabilities.get)
+
+def predict_sentence(prefix, word_options):
+    current_text = prefix
+    predicted_sentence = [prefix]
+
+    for options in word_options:
+        next_word = predict_next_word(current_text, options)
+        predicted_sentence.append(next_word)
+        current_text += " " + next_word
+
+    return " ".join(predicted_sentence)
+
+@app.route("/predict/word", methods=["POST"])
 def api_get_next_token_probabilities():
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
@@ -77,6 +93,28 @@ def api_get_next_token_probabilities():
         "input_text": input_text,
         "word_probabilities": sorted_words
     })
+
+@app.route("/predict/sentence", methods=["POST"])
+def api_get_sentence_probabilities():
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+    
+    data = request.get_json()
+    prefix = data.get("prefix", "")
+    word_options = data.get("word_options", "")
+
+    if not prefix:
+        return jsonify({"error": "No anchor text provided"}), 400
+    elif not word_options:
+        return jsonify({"error": "No word lists provided"}), 400
+    
+    predicted_sentence = predict_sentence(prefix, word_options)
+
+    return jsonify({
+        "prefix": prefix,
+        "predicted_sentence": predicted_sentence
+    })
+
 
 @app.route("/ping", methods=["GET"])
 def api_ping():
