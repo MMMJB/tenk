@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import torch
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 app = Flask(__name__)
+CORS(app)
 
 # # Check if AMD GPU is available
 # if torch.backends.rocm.is_available():
@@ -33,9 +35,11 @@ def get_next_token_probabilities(input_text):
     return torch.softmax(next_token_logits, dim=-1)
 
 def calculate_word_probability(word, token_probabilities):
-    word_tokens = tokenizer.encode(word, add_special_tokens=False)
+    # Add spaces before and after the word to treat it as a complete word
+    word_with_spaces = f" {word} "
+    word_tokens = tokenizer.encode(word_with_spaces, add_special_tokens=False)
+    
     prob = 1.0
-
     for token in word_tokens:
         prob *= token_probabilities[token].item()
 
