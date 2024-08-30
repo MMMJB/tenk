@@ -11,11 +11,14 @@ import { trie } from "../main";
 
 const space = letterToFinger(" ") as Finger;
 
-const ANCHOR = "i";
+const ANCHOR = "man";
 
 export default function App() {
   const [words, setWords] = useState<number[][]>([[]]);
   const [predictions, setPredictions] = useState<string[][]>([]);
+  const [rankedPredictions, setRankedPredictions] = useState<
+    Record<string, number>[]
+  >([]);
 
   const numWords = useRef(1);
 
@@ -75,13 +78,13 @@ export default function App() {
   }, [words]);
 
   async function predict() {
-    const { sentence, probabilities } = (await predictSentence(
+    const { probabilities } = (await predictSentence(
       ANCHOR,
       predictions,
       "external"
     )) as SentencePrediction;
 
-    console.log(sentence, probabilities);
+    setRankedPredictions(probabilities);
   }
 
   return (
@@ -94,6 +97,7 @@ export default function App() {
             key={i}
             locked={i < words.length - 1}
             predictions={predictions[i] ?? []}
+            rankedPredictions={rankedPredictions[i]}
           >
             {word.join(" ")}
           </Word>
