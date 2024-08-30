@@ -1,5 +1,8 @@
 import { Trie } from "../lib/trie";
 import fingermap from "../static/fingermap.json";
+import { letterToFinger } from ".";
+
+import type { Letter } from ".";
 
 const startWordlistLoad = performance.now();
 
@@ -14,6 +17,27 @@ const words = new Set(
     .filter((word) => word.split("").every((letter) => letter in fingermap))
 );
 
+const fingerCombinations: Record<string, string[]> = {};
+for (const word of words) {
+  const fingerCombination = word
+    .split("")
+    .map((letter) => letterToFinger(letter as Letter))
+    .join("");
+
+  if (!(fingerCombination in fingerCombinations)) {
+    fingerCombinations[fingerCombination] = [word];
+  } else {
+    fingerCombinations[fingerCombination].push(word);
+  }
+}
+
+// const fingerCombinationsWithOneWord = Object.values(fingerCombinations).filter(
+//   (words) => words.length === 1
+// );
+
+// console.log(fingerCombinationsWithOneWord.flat());
+console.log(fingerCombinations["128"]);
+
 console.info(`Loaded word list (${performance.now() - startWordlistLoad}ms)`);
 
 const startTrieBuild = performance.now();
@@ -27,3 +51,4 @@ console.info(
 );
 
 export default trie;
+export { words };

@@ -3,12 +3,11 @@ import "./index.css";
 // import { StrictMode } from 'react'
 import Visualization from "./routes/Visualization";
 import Testing from "./routes/Testing";
-import Keyboard from "./components/Keyboard";
 import { RouterProvider } from "react-router-dom";
 
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter } from "react-router-dom";
-import trie from "./utils/loadWords";
+import trie, { words } from "./utils/loadWords";
 
 const router = createBrowserRouter([
   {
@@ -36,4 +35,4 @@ createRoot(document.getElementById("root")!).render(
   //</StrictMode>,
 );
 
-export { trie };
+export { trie, words };

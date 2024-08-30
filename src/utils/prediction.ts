@@ -3,12 +3,15 @@ import { fingerToPossibleLetters, letterToFinger } from ".";
 import type { Finger } from ".";
 import type { Trie } from "../lib/trie";
 
+import { words } from "../main";
+
 // Get possible words for fingers
 export function fingersToPossibleWords(
   finger: Finger,
   trie: Trie,
   wordList?: Set<string>,
-  isFirstLetter = false
+  isFirstLetter = false,
+  isLastLetter = false
 ): Set<string> {
   const possibleLetters = fingerToPossibleLetters(finger);
 
@@ -27,7 +30,9 @@ export function fingersToPossibleWords(
     }
   }
 
-  return possibleWords;
+  return !isLastLetter
+    ? possibleWords
+    : new Set([...possibleWords].filter((word) => words.has(word)));
 }
 
 // Get possible sentence from fingers

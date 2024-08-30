@@ -12,7 +12,7 @@ import { trie } from "../main";
 
 const space = letterToFinger(" ") as Finger;
 
-const ANCHOR = "man";
+const ANCHOR = "how";
 
 export default function Page() {
   const [words, setWords] = useState<number[][]>([[]]);
@@ -71,7 +71,8 @@ export default function Page() {
         finger,
         trie,
         possibleWords,
-        i === 0
+        i === 0,
+        i === fingersForNewestFinishedWord.length - 1
       );
     }
 
