@@ -2,6 +2,7 @@ import "./index.css";
 
 // import { StrictMode } from 'react'
 import Visualization from "./routes/Visualization";
+import Testing from "./routes/Testing";
 import Keyboard from "./components/Keyboard";
 import { RouterProvider } from "react-router-dom";
 
@@ -23,14 +24,15 @@ const router = createBrowserRouter([
     path: "/visualization",
     element: <Visualization />,
   },
+  {
+    path: "/testing",
+    element: <Testing />,
+  },
 ]);
 
 createRoot(document.getElementById("root")!).render(
   // <StrictMode>
-  <>
-    <Keyboard />
-    <RouterProvider router={router} />
-  </>
+  <RouterProvider router={router} />
   //</StrictMode>,
 );
 

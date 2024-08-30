@@ -37,6 +37,7 @@ body,
     display: flex;
     gap: 1rem;
     font-size: 1.5rem;
+    margin-block: 1rem;
 
     .word {
       padding-block: 0.25rem;
@@ -73,8 +74,16 @@ body,
       .prediction {
         position: absolute;
         top: 0;
-        left: 0;
-        translate: 0 -100%;
+        left: 50%;
+        translate: -50% -100%;
+
+        &.correct {
+          color: #00c853;
+        }
+
+        &.incorrect {
+          color: #ff1744;
+        }
       }
     }
   }

@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 
+import Keyboard from "../components/Keyboard";
 import Word from "../components/Word";
 
 import type { Finger, Letter } from "../utils";
@@ -13,7 +14,7 @@ const space = letterToFinger(" ") as Finger;
 
 const ANCHOR = "man";
 
-export default function App() {
+export default function Page() {
   const [words, setWords] = useState<number[][]>([[]]);
   const [predictions, setPredictions] = useState<string[][]>([]);
   const [rankedPredictions, setRankedPredictions] = useState<
@@ -88,23 +89,26 @@ export default function App() {
   }
 
   return (
-    <div className="sentence">
-      <div className="word static">{ANCHOR}</div>
-      {words
-        .filter((word) => word.length)
-        .map((word, i) => (
-          <Word
-            key={i}
-            locked={i < words.length - 1}
-            predictions={predictions[i] ?? []}
-            rankedPredictions={rankedPredictions[i]}
-          >
-            {word.join(" ")}
-          </Word>
-        ))}
-      <div className="word static">
-        <button onClick={predict}>Predict</button>
+    <>
+      <Keyboard />
+      <div className="sentence">
+        <div className="word static">{ANCHOR}</div>
+        {words
+          .filter((word) => word.length)
+          .map((word, i) => (
+            <Word
+              key={i}
+              locked={i < words.length - 1}
+              predictions={predictions[i] ?? []}
+              rankedPredictions={rankedPredictions[i]}
+            >
+              {word.join(" ")}
+            </Word>
+          ))}
+        <div className="word static">
+          <button onClick={predict}>Predict</button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
