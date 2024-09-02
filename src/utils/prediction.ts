@@ -186,3 +186,27 @@ export async function predictSentence(
     return data;
   }
 }
+
+export async function predictSentenceWithoutAnchor(words: string[][]) {
+  const startPredictionTime = performance.now();
+
+  const response = await fetch(
+    `${import.meta.env.VITE_API_ENDPOINT}/predict/sentence`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ word_options: words }),
+    }
+  );
+  const data = (await response.json()) as SentencePrediction;
+
+  console.info(
+    `Finished sentence prediction (${
+      performance.now() - startPredictionTime
+    }ms)`
+  );
+
+  return data;
+}

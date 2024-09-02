@@ -31,12 +31,11 @@ for (const word of words) {
   }
 }
 
-// const fingerCombinationsWithOneWord = Object.values(fingerCombinations).filter(
-//   (words) => words.length === 1
-// );
+const fingerCombinationsWithOneWord = Object.values(fingerCombinations).filter(
+  (words) => words.length === 1
+);
 
-// console.log(fingerCombinationsWithOneWord.flat());
-console.log(fingerCombinations["128"]);
+console.log(fingerCombinationsWithOneWord.flat());
 
 console.info(`Loaded word list (${performance.now() - startWordlistLoad}ms)`);
 

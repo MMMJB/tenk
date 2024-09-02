@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect } from "react";
 
 import Word from "../components/Word";
 
@@ -79,7 +79,8 @@ export default function Page() {
             finger,
             trie,
             possibleWords,
-            j === 0
+            j === 0,
+            j === fingersForWord.length - 1
           );
         }
 

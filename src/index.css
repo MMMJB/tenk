@@ -67,8 +67,8 @@ body,
       .predictions {
         position: absolute;
         bottom: 0;
-        left: 0;
-        translate: 0 100%;
+        left: 50%;
+        translate: -50% 100%;
       }
 
       .prediction {
