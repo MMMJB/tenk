@@ -50,6 +50,9 @@ def calculate_word_probability(word, token_probabilities):
     return prob
 
 def predict_next_word(current_text, options):
+    if len(options) is 1:
+        return options[0]
+
     token_probabilities = get_next_token_probabilities(current_text)
     word_probabilities = {word: calculate_word_probability(word, token_probabilities) for word in options}
     return max(word_probabilities, key=word_probabilities.get)
