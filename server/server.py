@@ -21,6 +21,10 @@ model = GPT2LMHeadModel.from_pretrained(model_name).to(device)
 tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 
 def get_next_token_probabilities(input_text):
+    # If there is no input, set it to BOS token
+    if not input_text:
+        input_text = tokenizer.bos_token
+
     # Tokenize input text
     input_ids = tokenizer.encode(input_text, return_tensors="pt").to(device)
 
@@ -70,9 +74,7 @@ def api_get_next_token_probabilities():
     input_text = data.get("text", "")
     options = data.get("options", "")
 
-    if not input_text:
-        return jsonify({"error": "No input text provided"}), 400
-    elif not options:
+    if not options:
         return jsonify({"error": "No options provided"}), 400
     
     token_probabilities = get_next_token_probabilities(input_text)
@@ -121,4 +123,4 @@ def api_ping():
     return jsonify({"response": "pong"})
 
 if __name__ == "__main__":
-    app.run(host="192.168.1.37", debug=True)
+    app.run(debug=True)
