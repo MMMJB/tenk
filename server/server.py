@@ -54,9 +54,9 @@ def predict_next_word(current_text, options):
     word_probabilities = {word: calculate_word_probability(word, token_probabilities) for word in options}
     return max(word_probabilities, key=word_probabilities.get)
 
-def predict_sentence(prefix, word_options):
-    current_text = prefix
-    predicted_sentence = [prefix]
+def predict_sentence(word_options):
+    current_text = ""
+    predicted_sentence = []
 
     for options in word_options:
         next_word = predict_next_word(current_text, options)
@@ -102,18 +102,14 @@ def api_get_sentence_probabilities():
         return jsonify({"error": "Request must be JSON"}), 400
     
     data = request.get_json()
-    prefix = data.get("prefix", "")
     word_options = data.get("word_options", "")
 
-    if not prefix:
-        return jsonify({"error": "No anchor text provided"}), 400
-    elif not word_options:
+    if not word_options:
         return jsonify({"error": "No word lists provided"}), 400
     
-    predicted_sentence = predict_sentence(prefix, word_options)
+    predicted_sentence = predict_sentence(word_options)
 
     return jsonify({
-        "prefix": prefix,
         "predicted_sentence": predicted_sentence
     })
 
@@ -123,4 +119,4 @@ def api_ping():
     return jsonify({"response": "pong"})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="http://192.168.1.37:5000", debug=True)
