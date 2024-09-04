@@ -6,7 +6,7 @@ model_name = "t5-base"
 infilling_model = T5ForConditionalGeneration.from_pretrained(model_name)
 infilling_tokenizer = T5Tokenizer.from_pretrained(model_name)
 
-def generate_infilled_word_probabilities(word_options, max_length=512):
+def generate_infilled_word_probabilities(word_options, suffix=".", max_length=512):
     # Convert word_options to a single input string
     words = []
     unknown_word_id = 0
@@ -21,37 +21,28 @@ def generate_infilled_word_probabilities(word_options, max_length=512):
     text = " ".join(words)
     
     # Prepare the input for T5
-    input_text = f"infill: {text}."
-    inputs = infilling_tokenizer(input_text, return_tensors="pt", truncation=True, max_length=max_length)
+    input_text = f"{text}{suffix}"
+    inputs = infilling_tokenizer.encode(input_text, return_tensors="pt")
 
     # Get model output
     with torch.no_grad():
         output = infilling_model.generate(
-            inputs['input_ids'],
+            inputs,
             max_length=max_length,
             num_return_sequences=1,
             output_scores=True,
-            return_dict_in_generate=True
+            return_dict_in_generate=True,
+            no_repeat_ngram_size=2
         )
-    
-    # # Decode the output
+        
     generated_ids = output.sequences[0].tolist()
-    # decoded_output = infilling_tokenizer.decode(generated_ids, skip_special_tokens=False)
-    
-    # # Extract the infilled parts
-    # infilled_parts = re.findall(r'<extra_id_\d+>\s*(.*?)\s*(?=<extra_id_\d+>|$)', decoded_output)
-    
-    # # Replace the masks in the original text with the infilled parts
-    # result = text
-    # for i, part in enumerate(infilled_parts):
-    #     result = result.replace(f'<extra_id_{i}>', part, 1)
     
     # Process token probabilities
     all_probs = []
     for logits in output.scores:
         probs = F.softmax(logits[0], dim=-1)
         all_probs.append(probs)
-    
+
     aligned_probs = []
     current_part = ""
     current_probs = []
@@ -87,7 +78,7 @@ def get_infilled_word_probability(word, probs):
     return word_prob
 
 def predict_infilled_word(options, index, probs):
-    if len(options) is 1:
+    if len(options) == 1:
         return options[0]
 
     word_probabilities = {word: get_infilled_word_probability(word, probs[index][1]) for word in options}
@@ -95,8 +86,7 @@ def predict_infilled_word(options, index, probs):
 
 word_options = [
     ["yow", "ups", "how", "hos", "bow", "box", "bps", "now", "nos", "mow", "mos"],
-    # ["are", "ate", "age", "ace", "ave"],
-    ["are"],
+    ["are", "ate", "age", "ace", "ave"],
     ["you", "yob", "yon", "hob", "hon", "joy", "job", "jon", "jpn", "boyo", "bob", "bpm", "blu", "noh", "nob", "non", "mob", "mon", "mom", "mph"],
     ["doing"],
     ["today", "glean", "gleam", "clean"]
