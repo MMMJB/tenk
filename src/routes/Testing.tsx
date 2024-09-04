@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 import Word from "../components/Word";
 
@@ -10,7 +10,6 @@ import { fingersToPossibleWords, predictSentence } from "../utils/prediction";
 import { trie } from "../main";
 
 type Sentence = {
-  // prefix: string;
   sentence: string;
   sentenceFingers: number[];
   prediction: string[];
@@ -19,11 +18,8 @@ type Sentence = {
 const space = letterToFinger(" ") as Finger;
 
 export default function Page() {
-  // const prefixComplete = useRef(false);
-
   const [pastSentences, setPastSentences] = useState<Sentence[]>([]);
   const [currentSentence, setCurrentSentence] = useState<Sentence>({
-    // prefix: "",
     sentence: "",
     sentenceFingers: [],
     prediction: [],
@@ -47,18 +43,11 @@ export default function Page() {
 
   async function onKeyPress(e: KeyboardEvent) {
     if (e.key === "Backspace") {
-      // if (prefixComplete.current) {
       setCurrentSentence((p) => ({
         ...p,
         sentence: p.sentence.slice(0, -1),
         sentenceFingers: p.sentenceFingers.slice(0, -1),
       }));
-      // } else {
-      //   setCurrentSentence((p) => ({
-      //     ...p,
-      //     prefix: p.prefix.slice(0, -1),
-      //   }));
-      // }
     } else if (e.key === "Enter") {
       setLoading(true);
 
@@ -96,40 +85,27 @@ export default function Page() {
       setPastSentences((p) => [
         ...p,
         {
-          // prefix: currentSentence.prefix,
           sentence: currentSentence.sentence,
           sentenceFingers: currentSentence.sentenceFingers,
           prediction: predicted_sentence.split(" "),
         },
       ]);
       setCurrentSentence({
-        // prefix: "",
         sentence: "",
         sentenceFingers: [],
         prediction: [],
       });
-      // prefixComplete.current = false;
 
       setLoading(false);
     } else {
       const finger = letterToFinger(e.key as Letter);
 
       setCurrentSentence((p) => {
-        // if (finger === space && !prefixComplete.current) {
-        //   prefixComplete.current = true;
-        //   return p;
-        // } else if (!prefixComplete.current) {
-        //   return {
-        //     ...p,
-        //     prefix: p.prefix + e.key,
-        //   };
-        // } else {
         return {
           ...p,
           sentence: p.sentence + e.key,
           sentenceFingers: [...p.sentenceFingers, finger],
         };
-        // }
       });
     }
   }
@@ -140,7 +116,7 @@ export default function Page() {
     return () => document.removeEventListener("keydown", onKeyPress);
   }, [onKeyPress]);
 
-  const { sentenceFingers /*, prefix*/ } = currentSentence;
+  const { sentenceFingers } = currentSentence;
 
   return (
     <>

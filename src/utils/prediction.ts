@@ -135,23 +135,25 @@ export type APISentencePrediction = {
 };
 
 export async function predictSentence(
-  anchor: string,
   words: string[][],
   method: "internal" | "external"
 ): Promise<SentencePrediction | APISentencePrediction> {
   const startPredictionTime = performance.now();
 
   if (method === "external") {
-    let context = anchor;
+    let context: string[] = [];
     const predictions: Record<string, number>[] = [];
 
     for (const wordList of words) {
-      const sortedWordProbabilities = await rankNextWords(context, wordList);
+      const sortedWordProbabilities = await rankNextWords(
+        context.join(" "),
+        wordList
+      );
 
       predictions.push(sortedWordProbabilities);
 
       const nextWord = Object.entries(sortedWordProbabilities)[0][0];
-      context += ` ${nextWord}`;
+      context.push(nextWord);
     }
 
     console.info(
@@ -161,7 +163,7 @@ export async function predictSentence(
     );
 
     return {
-      sentence: context,
+      sentence: context.join(" "),
       probabilities: predictions,
     };
   } else {
@@ -172,7 +174,7 @@ export async function predictSentence(
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prefix: anchor, word_options: words }),
+        body: JSON.stringify({ word_options: words }),
       }
     );
     const data = (await response.json()) as SentencePrediction;
@@ -185,28 +187,4 @@ export async function predictSentence(
 
     return data;
   }
-}
-
-export async function predictSentenceWithoutAnchor(words: string[][]) {
-  const startPredictionTime = performance.now();
-
-  const response = await fetch(
-    `${import.meta.env.VITE_API_ENDPOINT}/predict/sentence`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ word_options: words }),
-    }
-  );
-  const data = (await response.json()) as SentencePrediction;
-
-  console.info(
-    `Finished sentence prediction (${
-      performance.now() - startPredictionTime
-    }ms)`
-  );
-
-  return data;
 }
