@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import torch
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
+import torch.nn.functional as F
+from transformers import GPT2LMHeadModel, GPT2Tokenizer, T5ForConditionalGeneration, T5Tokenizer
+import re
 
 app = Flask(__name__)
 CORS(app)
@@ -15,10 +17,15 @@ CORS(app)
 #     print("AMD GPU not available, using CPU")
 device = torch.device("cpu")
 
-# Load pre-trained model and tokenizer
+# Load pre-trained base model and tokenizer
 model_name = "gpt2"
 model = GPT2LMHeadModel.from_pretrained(model_name).to(device)
 tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+
+# Load pre-trained infilling model and tokenizer
+infilling_model_name = "t5-base"
+infilling_model = T5ForConditionalGeneration.from_pretrained(infilling_model_name)
+infilling_tokenizer = T5Tokenizer.from_pretrained(infilling_model_name)
 
 def get_next_token_probabilities(input_text):
     # If there is no input, set it to BOS token
@@ -49,8 +56,8 @@ def calculate_word_probability(word, token_probabilities):
 
     return prob
 
-def predict_next_word(current_text, options):
-    if len(options) is 1:
+def predict_next_word(current_text, options):  
+    if len(options) == 1:
         return options[0]
 
     token_probabilities = get_next_token_probabilities(current_text)
@@ -58,6 +65,9 @@ def predict_next_word(current_text, options):
     return max(word_probabilities, key=word_probabilities.get)
 
 def predict_sentence(word_options):
+    if not all(len(sub_options) > 1 for sub_options in word_options):
+        return predict_sentence_with_infilling(word_options)
+
     current_text = ""
     predicted_sentence = []
 
@@ -67,6 +77,93 @@ def predict_sentence(word_options):
         current_text += " " + next_word
 
     return " ".join(predicted_sentence)
+
+def generate_infilled_word_probabilities(word_options, suffix=".", max_length=512):
+    # Convert word_options to a single input string
+    words = []
+    unknown_word_id = 0
+
+    for sub_options in word_options:
+        if len(sub_options) == 1:
+            words.append(sub_options[0])
+        else:
+            words.append(f"<extra_id_{unknown_word_id}>")
+            unknown_word_id += 1
+
+    text = " ".join(words)
+    
+    # Prepare the input for T5
+    input_text = f"{text}{suffix}"
+    inputs = infilling_tokenizer.encode(input_text, return_tensors="pt")
+
+    # Get model output
+    with torch.no_grad():
+        output = infilling_model.generate(
+            inputs,
+            max_length=max_length,
+            num_return_sequences=1,
+            output_scores=True,
+            return_dict_in_generate=True,
+            no_repeat_ngram_size=2
+        )
+        
+    generated_ids = output.sequences[0].tolist()
+    
+    # Process token probabilities
+    all_probs = []
+    for logits in output.scores:
+        probs = F.softmax(logits[0], dim=-1)
+        all_probs.append(probs)
+
+    aligned_probs = []
+    current_part = ""
+    current_probs = []
+    for i, token_id in enumerate(generated_ids[1:]):
+        token = infilling_tokenizer.decode([token_id])
+        if token.startswith("<extra_id_"):
+            if current_part:
+                aligned_probs.append((current_part.strip(), current_probs))
+            current_part = ""
+            current_probs = []
+        elif i < len(all_probs):
+            current_part += token
+            current_probs.append(all_probs[i])
+    if current_part:
+        aligned_probs.append((current_part.strip(), current_probs))
+
+    return aligned_probs
+
+def get_infilled_word_probability(word, probs):
+    # Tokenize the word with spaces
+    word_with_spaces = f" {word} "
+    word_tokens = infilling_tokenizer.encode(word_with_spaces, add_special_tokens=False)
+
+    # ! If the word is split into multiple tokens, we'll use the minimum probability
+    word_prob = 1.0
+    for i, token_id in enumerate(word_tokens):
+        if i < len(probs):
+            token_prob = probs[i][token_id].item()
+            word_prob = min(word_prob, token_prob)
+        else:
+            return 0.0 # Return 0 if we don't have enough probability distribution
+        
+    return word_prob
+
+def predict_infilled_word(options, index, probs):
+    if len(options) == 1:
+        return options[0]
+
+    word_probabilities = {word: get_infilled_word_probability(word, probs[index][1]) for word in options}
+    return max(word_probabilities, key=word_probabilities.get)
+
+def predict_sentence_with_infilling(word_options):
+    all_probs = generate_infilled_word_probabilities(word_options)
+
+    predicted_words = []
+    for i, sub_options in enumerate(word_options):
+        predicted_words.append(predict_infilled_word(sub_options, i, all_probs))
+
+    return " ".join(predicted_words)
 
 @app.route("/predict/word", methods=["POST"])
 def api_get_next_token_probabilities():
@@ -122,4 +219,4 @@ def api_ping():
     return jsonify({"response": "pong"})
 
 if __name__ == "__main__":
-    app.run(host="http://192.168.1.37:5000", debug=True)
+    app.run(host="0.0.0.0", debug=True)
