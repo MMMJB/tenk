@@ -1,4 +1,4 @@
-from transformers import BertTokenizer, BertForMaskedLM# T5ForConditionalGeneration, T5Tokenizer
+from transformers import BertTokenizer, BertForMaskedLM
 import torch
 import torch.nn.functional as F
 
@@ -73,6 +73,7 @@ def generate_infilled_word_probabilities(word_options, suffix=".", max_length=51
             highest_prediction = prediction
             highest_prediction_index = i
 
+    # Only replace the most confident token, then rerun the function with the new word list
     highest_prediction_position = mask_positions[highest_prediction_index]
     new_word_options = word_options
     word_options[highest_prediction_position] = [highest_prediction[0]]
