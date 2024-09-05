@@ -4,19 +4,13 @@ import Keyboard from "../components/Keyboard";
 import Word from "../components/Word";
 
 import type { Finger, Letter } from "../utils";
-// import type { SentencePrediction } from "../utils/prediction";
+import type { SentencePrediction } from "../utils/prediction";
 
 import { letterToFinger } from "../utils";
-import {
-  fingersToPossibleWords,
-  // predictSentence,
-  predictSentenceWithoutAnchor,
-} from "../utils/prediction";
+import { fingersToPossibleWords, predictSentence } from "../utils/prediction";
 import { trie } from "../main";
 
 const space = letterToFinger(" ") as Finger;
-
-// const ANCHOR = "i";
 
 export default function Page() {
   const [words, setWords] = useState<number[][]>([[]]);
@@ -86,12 +80,10 @@ export default function Page() {
   }, [words]);
 
   async function predict() {
-    // const { probabilities } = (await predictSentence(
-    //   ANCHOR,
-    //   predictions,
-    //   "external"
-    // )) as SentencePrediction;
-    const { probabilities } = await predictSentenceWithoutAnchor(predictions);
+    const { probabilities } = (await predictSentence(
+      predictions,
+      "external"
+    )) as SentencePrediction;
 
     setRankedPredictions(probabilities);
   }
@@ -100,7 +92,6 @@ export default function Page() {
     <>
       <Keyboard />
       <div className="sentence">
-        {/* <div className="word static">{ANCHOR}</div> */}
         {words
           .filter((word) => word.length)
           .map((word, i) => (
