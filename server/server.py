@@ -58,7 +58,9 @@ def predict_next_word(current_text, options):
     return max(word_probabilities, key=word_probabilities.get)
 
 def predict_sentence(word_options):
-    if not all(len(sub_options) > 1 for sub_options in word_options):
+    if all(len(sub_options) == 1 for sub_options in word_options):
+        return " ".join(sub_options[0] for sub_options in word_options)
+    elif not all(len(sub_options) > 1 for sub_options in word_options):
         return predict_sentence_with_infilling(word_options)
 
     current_text = ""
