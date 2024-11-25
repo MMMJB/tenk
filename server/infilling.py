@@ -82,16 +82,3 @@ def generate_infilled_word_probabilities(word_options, suffix=".", max_length=51
         return generate_infilled_word_probabilities(new_word_options)
     else:
         return new_word_options
-
-def main():
-    word_options = [
-        ["yow", "ups", "how", "hos", "bow", "box", "bps", "now", "nos", "mow", "mos"],
-        ["are", "ate", "age", "ace", "ave"],
-        ["you", "yob", "yon", "hob", "hon", "joy", "job", "jon", "jpn", "boyo", "bob", "bpm", "blu", "noh", "nob", "non", "mob", "mon", "mom", "mph"],
-        ["doing"],
-        ["today", "glean", "gleam", "clean"]
-    ]
-    results = generate_infilled_word_probabilities(word_options)
-    print(results)
-
-main()

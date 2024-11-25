@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 
-import fingermap from "../static/fingermap.json";
+import fingermap from "../static/base-fingermap.json";
 
 export type Letter = keyof typeof fingermap;
 export type Finger = (typeof fingermap)[Letter];

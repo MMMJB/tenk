@@ -77,7 +77,6 @@ export default function Page() {
       }
 
       const { predicted_sentence } = (await predictSentence(
-        // currentSentence.prefix,
         wordLists,
         "internal"
       )) as APISentencePrediction;

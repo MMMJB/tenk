@@ -3,6 +3,7 @@ import "./index.css";
 // import { StrictMode } from 'react'
 import Visualization from "./routes/Visualization";
 import Testing from "./routes/Testing";
+import Chat from "./routes/Chat";
 import { RouterProvider } from "react-router-dom";
 
 import { createRoot } from "react-dom/client";
@@ -16,6 +17,7 @@ const router = createBrowserRouter([
       <>
         <a href="/visualization">Sentence visualization</a>
         <a href="/testing">Live sentence testing</a>
+        <a href="/chat">Chat</a>
       </>
     ),
   },
@@ -26,6 +28,10 @@ const router = createBrowserRouter([
   {
     path: "/testing",
     element: <Testing />,
+  },
+  {
+    path: "/chat",
+    element: <Chat />,
   },
 ]);
 

@@ -1,5 +1,5 @@
 import { Trie } from "../lib/trie";
-import fingermap from "../static/fingermap.json";
+import fingermap from "../static/base-fingermap.json";
 
 const startWordlistLoad = performance.now();
 
