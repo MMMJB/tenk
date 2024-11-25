@@ -1,6 +1,7 @@
 from serial import Serial
 from lib.load import load_trie, load_words, load_fingermap
-from lib.base_prediction import fingers_to_possible_sentences
+from lib.base_prediction import fingers_to_possible_sentences, letter_to_finger
+from server import predict_sentence
 
 CONTROL_KEY = 5
 
@@ -38,7 +39,9 @@ def read_serial(comport, baudrate):
           print(sequence)
 
           possible_words = fingers_to_possible_sentences(sequence, fingermap, trie)
-          print(possible_words)
+          print("Possible words:", possible_words)
+          prediction = predict_sentence(possible_words)
+          print("Prediction:", prediction)
       elif writing:
         print(data)
         sequence.append(data)

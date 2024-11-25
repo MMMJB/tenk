@@ -28,7 +28,6 @@ def fingers_to_possible_words(finger, fingermap, trie, words, all_words, is_firs
   
 def fingers_to_possible_sentences(fingers, fingermap, trie, all_words):
   SPACE_FINGER = letter_to_finger(" ", fingermap)
-  terminating = False
 
   words = []
   current_word = []
@@ -50,14 +49,9 @@ def fingers_to_possible_sentences(fingers, fingermap, trie, all_words):
     for j, finger in enumerate(fingers_for_word):
       possible_words = fingers_to_possible_words(finger, fingermap, trie, possible_words, all_words, j == 0, j == len(fingers_for_word) - 1)
 
-    if not possible_words:
-      terminating = True
-      break
+    sentence_words.append(list(possible_words))
 
-    sentence_words.append(possible_words)
-
-  if terminating:
-    print("No possible words found.")
+  if any(len(words) == 0 for words in sentence_words):
     return []
   
   return sentence_words

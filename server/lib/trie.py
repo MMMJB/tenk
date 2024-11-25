@@ -31,7 +31,7 @@ class Trie:
     def search_trie(self, word):
         """Search for a given word in the Trie."""
         if not word:
-            return self.is_end
+            return True
 
         sub_trie = self.has_char(word[0])
         if sub_trie is None:
