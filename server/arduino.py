@@ -1,8 +1,8 @@
 from serial import Serial
-from pynput.keyboard import Controller, Key
+from pynput.keyboard import Controller
 from lib.load import load_trie, load_words, load_fingermap
-from lib.base_prediction import fingers_to_possible_sentences, letter_to_finger
-from lib.type import type_sequence
+from lib.base_prediction import fingers_to_possible_sentences
+from lib.type import type_sequence, delete
 from server import predict_sentence
 
 keyboard = Controller()
@@ -18,40 +18,70 @@ def read_serial(comport, baudrate):
 
   writing = False
   sequence = []
+  control = False
+  shortcut = False
+
+  def delete_last_char():
+    if len(sequence) == 0:
+      return
+
+    last = sequence.pop()
+    delete(keyboard, len(str(last)))
+
+  shortcuts = {
+    10: delete_last_char
+  }
 
   try:
     while True:
-      data = ser.readline().decode().strip()
+      try:
+        data = ser.readline().decode().strip()
+      except UnicodeDecodeError:
+        continue
 
       if not data:
         continue
 
-      if not data.isdigit():
-        print(f"Invalid digit {data}")
-        continue
+      key = int(data[:-1])
+      inputType = data[-1]
+      
+      if inputType == "p" and key == CONTROL_KEY:
+        control = True
+      elif inputType == "r" and key == CONTROL_KEY:
+        control = False
 
-      data = int(data)
+      if inputType == "r":
+        if not control:
+          if key == CONTROL_KEY:
+            if shortcut:
+              shortcut = False
+              continue
 
-      if data == CONTROL_KEY:
-        writing = not writing
+            writing = not writing
 
-        if writing:
-          print("Listening for sequence...")
-          sequence = []
+            if writing:
+              print("Listening for sequence...")
+              sequence = []
+            else:
+              print("Finished listening for sequence. Received:")
+              print(sequence)
+
+              possible_words = fingers_to_possible_sentences(sequence, fingermap, trie, words)
+              print("Possible words:", possible_words)
+              prediction = predict_sentence(possible_words)
+              print("Prediction:", prediction)
+
+              replace = "".join([str(x) for x in sequence]).__len__()
+              type_sequence(prediction, keyboard, replace=replace, capitalize=True)
+          elif writing:
+            type_sequence([int(x) for x in str(key)], keyboard)
+            sequence.append(key)
         else:
-          print("Finished listening for sequence. Received:")
-          print(sequence)
+          shortcut = True
 
-          possible_words = fingers_to_possible_sentences(sequence, fingermap, trie)
-          print("Possible words:", possible_words)
-          prediction = predict_sentence(possible_words)
-          print("Prediction:", prediction)
+          if key in shortcuts:
+            shortcuts[key]()
 
-          type_sequence(prediction, keyboard, replace=len(prediction))
-      elif writing:
-        print(data)
-        type_sequence([data], keyboard)
-        sequence.append(data)
 
   except KeyboardInterrupt:
     print("Stopped listening to serial output.")
@@ -59,16 +89,4 @@ def read_serial(comport, baudrate):
 
 if __name__ == '__main__':
   read_serial('/dev/cu.usbserial-DN02Z9QE', 9600)
-  # fingermap = load_fingermap()
-  # words = load_words(fingermap)
-  # trie = load_trie(words)
 
-  # sentence = "can i put my balls in your jaws"
-  # sequence = [letter_to_finger(letter, fingermap) for letter in sentence]
-
-  # type_sequence(sequence, keyboard)
-
-  # possible_words = fingers_to_possible_sentences(sequence, fingermap, trie, words)
-  # prediction = predict_sentence(possible_words)
-
-  # type_sequence(prediction, keyboard, replace=len(prediction))
