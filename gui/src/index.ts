@@ -4,6 +4,7 @@ import { app, BrowserWindow } from "electron";
 // whether you're running in development or production).
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
+const PRODUCTION = process.env.PROD === "true";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -16,16 +17,18 @@ const createWindow = (): void => {
     height: 600,
     width: 800,
     frame: false,
-    transparent: true,
-    resizable: false,
+    transparent: PRODUCTION,
+    resizable: !PRODUCTION,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
   });
 
   // Set browser window to alweays be on top
-  mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  mainWindow.setAlwaysOnTop(true, "screen-saver", 1);
+  if (PRODUCTION) {
+    mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    mainWindow.setAlwaysOnTop(true, "screen-saver", 1);
+  }
 
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
