@@ -26,5 +26,6 @@
  * ```
  */
 
-import "./index.css";
+import "./styles/reset.css";
+import "./styles/index.css";
 import "./app";
