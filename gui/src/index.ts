@@ -34,15 +34,13 @@ const createWindow = (): void => {
 
   // Set browser window to alweays be on top
   if (PRODUCTION) {
+    // mainWindow.setIgnoreMouseEvents(true);
     mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     mainWindow.setAlwaysOnTop(true, "screen-saver", 1);
   }
 
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
