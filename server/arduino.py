@@ -38,6 +38,11 @@ def read_serial(comport, baudrate):
         data = ser.readline().decode().strip()
       except UnicodeDecodeError:
         continue
+      
+      if data:
+        print(data)
+
+      continue
 
       if not data:
         continue
