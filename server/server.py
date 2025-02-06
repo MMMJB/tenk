@@ -73,11 +73,12 @@ def predict_sentence(word_options):
 
     return " ".join(predicted_sentence)
 
-def predict_infilled_words(word_options, suffix=".", max_length=512):
+def predict_infilled_words(word_options, template="", suffix=".", max_length=512):
     # Convert word_options to a single input string and collect mask positions
     words = []
     mask_positions = []
     all_word_tokens = []
+    original_words = []  # Store the original word options
 
     for i, sub_options in enumerate(word_options):
         if len(sub_options) == 1:
@@ -85,11 +86,16 @@ def predict_infilled_words(word_options, suffix=".", max_length=512):
         else:
             words.append(infilling_tokenizer.mask_token)
             mask_positions.append(i)
+            # Store the original words for exact matching later
+            original_words.append(sub_options)
             # Tokenize potential words and store token IDs
             tokenized_options = [infilling_tokenizer.convert_tokens_to_ids(infilling_tokenizer.tokenize(word)) for word in sub_options]
             all_word_tokens.append(tokenized_options)
 
-    text = " ".join(words)
+    if not template:
+        text = " ".join(words)
+    else:
+        text = template.format(*words)
     
     # Prepare the input for BERT
     input_text = f"{text}{suffix}"
@@ -104,34 +110,28 @@ def predict_infilled_words(word_options, suffix=".", max_length=512):
         outputs = infilling_model(**inputs)
         
     logits = outputs.logits[0]
+    new_word_options = []
     
     # Process token probabilities
-    vocab_size = logits.size(-1)  # Size of the vocabulary
+    vocab_size = logits.size(-1)
     predictions = []
 
-    for mask_index, word_tokens in zip(mask_token_indices, all_word_tokens):
-        # Get probabilities for all tokens
+    for mask_idx, (mask_index, word_tokens, original_word_list) in enumerate(zip(mask_token_indices, all_word_tokens, original_words)):
         probs = F.softmax(logits[mask_index], dim=-1)
-        
-        # Initialize a dictionary to hold combined probabilities
         word_probabilities = {}
         
-        for token_ids in word_tokens:
-            # Compute the product of probabilities for the tokens
+        # Calculate probabilities for each original word
+        for word, token_ids in zip(original_word_list, word_tokens):
             prob = 1.0
             for token_id in token_ids:
-                if token_id < vocab_size:  # Ensure token_id is within vocab size
+                if token_id < vocab_size:
                     prob *= probs[token_id].item()
-            
-            word_probabilities[token_ids[0]] = prob
+            word_probabilities[word] = prob
 
-        # Find the token ID with the highest product probability
-        best_token_id = max(word_probabilities, key=word_probabilities.get)
-        best_prob = word_probabilities[best_token_id]
-
-        # Convert the token ID back to the word
-        best_word_token = infilling_tokenizer._convert_id_to_token(best_token_id)
-        predictions.append((best_word_token, best_prob))
+        # Find the word with the highest probability from the original options
+        best_word = max(word_probabilities, key=word_probabilities.get)
+        best_prob = word_probabilities[best_word]
+        predictions.append((best_word, best_prob))
 
     highest_prediction = ("", 0)
     highest_prediction_index = 0
@@ -142,16 +142,20 @@ def predict_infilled_words(word_options, suffix=".", max_length=512):
 
     # Only replace the most confident token, then rerun the function with the new word list
     highest_prediction_position = mask_positions[highest_prediction_index]
-    new_word_options = word_options
-    word_options[highest_prediction_position] = [highest_prediction[0]]
+    new_word_options = word_options.copy()
+    new_word_options[highest_prediction_position] = [highest_prediction[0]]
 
-    if not all(len(sub_options) == 1 for sub_options in word_options):
-        return predict_infilled_words(new_word_options)
+    if not all(len(sub_options) == 1 for sub_options in new_word_options):
+        return predict_infilled_words(new_word_options, template=template, suffix=suffix, max_length=max_length)
     else:
-        return new_word_options
+        if not template:
+            return new_word_options
+        else:
+            return template.format(*[sub_options[0] for sub_options in new_word_options])
     
-def predict_sentence_with_infilling(word_options):
-    output = predict_infilled_words(word_options)
+def predict_sentence_with_infilling(word_options, template=""):
+    suffix = "." if not template else ""
+    output = predict_infilled_words(word_options, template=template, suffix=suffix)
     output_words = np.array(output).flatten()
     return np.apply_along_axis(" ".join, 0, output_words).tolist()
 

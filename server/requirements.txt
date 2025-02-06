@@ -5,3 +5,5 @@ torch
 transformers
 pyserial
 pynput
+tqdm
+pandas
